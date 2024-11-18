@@ -15,7 +15,12 @@
   const PLAYER = 2;
   const END = 3;
   const MOVEMENT_SPEED = 100; // ms between moves
-  let endPos = $state<Position>();
+  let endPos = $state<Position>({ x: 0, y: 0 });
+
+  let elapsed = $state(0);
+  let timeTaken = $state<number>(0);
+  let score = $state<number>(0);
+  let scoreCalculated = false;
 
   $effect(() => {
     endPos = { x: mazeSize - 2, y: mazeSize - 2 };
@@ -71,6 +76,11 @@
       clearInterval(moveInterval);
       moveInterval = null;
     }
+    if (gameWon && !scoreCalculated) {
+      timeTaken = $state.snapshot(elapsed) / 1000;
+      score = Math.floor((mazeSize * mazeSize) / timeTaken);
+      scoreCalculated = true;
+    }
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -100,11 +110,14 @@
     pressedKeys.clear();
     stopMovement();
     initializeMaze();
+    elapsed = 0;
+    scoreCalculated = false;
   }
 
   function initializeMaze() {
     const { generatedMaze } = createMaze(mazeSize, playerPos, endPos);
     maze = generatedMaze;
+    elapsed = 0;
   }
 
   function updateMazeSize() {
@@ -129,9 +142,20 @@
     initializeMaze();
     updateMazeSize();
     window.addEventListener("resize", updateMazeSize);
+
+    let last_time = performance.now();
+    let frame = requestAnimationFrame(function update(time) {
+      frame = requestAnimationFrame(update);
+
+      elapsed += Math.min(time - last_time);
+      console.log("elapsed: ", elapsed);
+      last_time = time;
+    });
+
     return () => {
       window.removeEventListener("resize", updateMazeSize);
       stopMovement();
+      cancelAnimationFrame(frame);
     };
   });
 </script>
@@ -170,10 +194,14 @@
   {#if gameWon}
     <div class="mt-8 text-center">
       <h2 class="text-xl text-green-400 mb-4">You Won!</h2>
+      <p class="text-lg text-white">Time Taken: {timeTaken.toFixed(2)} seconds</p>
+      <p class="text-lg text-white">Score: {score}</p>
       <button onclick={resetGame} class="px-6 py-3 bg-green-500 hover:bg-green-600 rounded transition-colors duration-200 text-sm"> Play Again </button>
     </div>
   {:else}
-    <p class="mt-6 text-sm text-gray-400">Use arrow keys or WASD to move</p>
+    <p class="mt-6 text-sm text-gray-400">
+      Time Elapsed: {(elapsed / 1000).toFixed(1)}s
+    </p>
     <button onclick={resetGame} class="mt-4 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors duration-200 text-sm"> Reset Game </button>
   {/if}
 </div>
