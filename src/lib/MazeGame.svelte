@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { createMaze } from "./mazeGenerator";
-  import type { Position, MazeCell } from "./types";
+  import type { Position, MazeCellType } from "./types";
 
-  let maze = $state<MazeCell[][]>([]);
+  let maze = $state<MazeCellType[][]>([]);
   let playerPos = $state<Position>({ x: 1, y: 1 });
   let gameWon = $state(false);
   let moveInterval = $state<number | null>(null);

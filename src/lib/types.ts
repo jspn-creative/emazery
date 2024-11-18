@@ -2,4 +2,9 @@ export type Position = {
   x: number;
   y: number;
 };
-export type MazeCell = 0 | 1 | 2 | 3; // PATH | WALL | PLAYER | END
+export enum MazeCellType {
+  PATH = 0,
+  WALL = 1,
+  PLAYER = 2,
+  END = 3,
+}
