@@ -9,13 +9,20 @@
   let moveInterval = $state<number | null>(null);
   let pressedKeys = $state(new Set<string>());
 
-  const MAZE_SIZE = 15;
+  let mazeSize = $state<number>(15);
   const WALL = 1;
   const PATH = 0;
   const PLAYER = 2;
   const END = 3;
   const MOVEMENT_SPEED = 100; // ms between moves
-  const endPos: Position = { x: MAZE_SIZE - 2, y: MAZE_SIZE - 2 };
+  let endPos = $state<Position>();
+
+  $effect(() => {
+    endPos = { x: mazeSize - 2, y: mazeSize - 2 };
+  });
+
+  const CELL_SIZE = 32; // Width and height of each maze cell in pixels
+  const MARGIN = [350, 100]; // Total margin/padding around the maze (adjust as needed)
 
   function movePlayer(dx: number, dy: number) {
     if (gameWon) return;
@@ -23,7 +30,7 @@
     const newX = playerPos.x + dx;
     const newY = playerPos.y + dy;
 
-    if (newX >= 0 && newX < MAZE_SIZE && newY >= 0 && newY < MAZE_SIZE && maze[newY][newX] !== WALL) {
+    if (newX >= 0 && newX < mazeSize && newY >= 0 && newY < mazeSize && maze[newY][newX] !== WALL) {
       maze[playerPos.y][playerPos.x] = PATH;
       playerPos = { x: newX, y: newY };
 
@@ -96,13 +103,34 @@
   }
 
   function initializeMaze() {
-    const { generatedMaze } = createMaze(MAZE_SIZE, playerPos, endPos);
+    const { generatedMaze } = createMaze(mazeSize, playerPos, endPos);
     maze = generatedMaze;
+  }
+
+  function updateMazeSize() {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    const maxMazeWidth = Math.floor((windowWidth - MARGIN[1]) / CELL_SIZE);
+    const maxMazeHeight = Math.floor((windowHeight - MARGIN[0]) / CELL_SIZE);
+
+    const maxSize = Math.min(maxMazeWidth, maxMazeHeight);
+
+    const newMazeSize = Math.max(5, maxSize | 1);
+
+    if (newMazeSize !== mazeSize) {
+      mazeSize = newMazeSize;
+      endPos = { x: mazeSize - 2, y: mazeSize - 2 };
+      resetGame();
+    }
   }
 
   onMount(() => {
     initializeMaze();
+    updateMazeSize();
+    window.addEventListener("resize", updateMazeSize);
     return () => {
+      window.removeEventListener("resize", updateMazeSize);
       stopMovement();
     };
   });
